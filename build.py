@@ -308,7 +308,7 @@ def main(args: argparse.Namespace):
         f'',
         f'# Python modules installation',
         f'RUN apt-get update && apt-get install -y gcc # surfa needs gcc to compile',
-        f'RUN pip3 --no-cache-dir install antspyx antspynet',
+        f'RUN pip3 --no-cache-dir install antspyx antspynet nibabel',
         f'',
         f'# Cleanup files not required after installation',
         f'RUN apt-get clean && \\',
@@ -326,7 +326,6 @@ def main(args: argparse.Namespace):
         f'',
         f'# copy the .py module',
         f'COPY {os.path.relpath(target_data["path"]["process"], cwd)}  /opt/code/python-ismrmrd-server',
-        f'COPY {os.path.relpath(target_data["path"]["process_json"], cwd)}  /opt/code/python-ismrmrd-server',
         f'',
     ]
     dockerfile_content = "\n".join(dockerfile_content)
