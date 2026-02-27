@@ -15,8 +15,6 @@ import subprocess
 import re
 import json
 import base64
-import urllib
-
 
 def print_section(name: str) -> None:
     DEBUG_LINE = '#'*40
@@ -87,7 +85,7 @@ def clone_server(repo_path: str) -> None:
         logger.info(f'Found `python-ismrmrd-server` dir, do not clone it again : {repo_path}')
     else:
         logger.info('`python-ismrmrd-server` not found, cloning it...')
-        subprocess.run(f'git clone {git_adress} && cd python-ismrmrd-server && git checkout b3012075b050faac32686f0fafea0c10cde861bd', shell=True, check=True)
+        subprocess.run(f'git clone {git_adress}', shell=True, check=True)
 
 
 def build_server(repo_dockerfile_path: str) -> None:
@@ -137,6 +135,7 @@ def check_target_dir(target_path: str) -> dict:
     else:
         logger.error(f'.py process not found : {process_path}')
         sys.exit(1)
+    process_json_path = os.path.join(target_path, f'{process_name}.json')
 
     target_data = {
         'name' : {
@@ -145,6 +144,7 @@ def check_target_dir(target_path: str) -> dict:
         },
         'path': {
             'process' : process_path,
+            'process_json' : process_json_path,
             'ui_json' : json_ui_list[0],
             'schema'  :  schema_list[0],
         }
@@ -215,7 +215,7 @@ def main(args: argparse.Namespace):
     print_section('SYSTEM DEPENDENCIES')
     check_zip()
     check_git()
-    check_docker()
+    # check_docker()
 
     # python-ismrmrd-server : clone & build docker image
     print_section('CLONE & BUILD SERVER')
@@ -235,16 +235,6 @@ def main(args: argparse.Namespace):
 
     print_section('BUILD')
     logger.warning('From now on, all steps will not have a "skip if already done" feature')
-
-    # download the DeepLearning weights
-    weights_name = 'synthstrip.1.pt'
-    weights_url = 'https://surfer.nmr.mgh.harvard.edu/docs/synthstrip/requirements/synthstrip.1.pt'
-    weights_path = os.path.join(cwd, 'app', weights_name)
-    if os.path.exists(weights_path):
-        logger.info(f'Weigths `{weights_name}` in `app` dir : {weights_path}')
-    else:
-        logger.info(f'Download weigths `{weights_name}` in `app` dir : {weights_path}')
-        urllib.request.urlretrieve(weights_url, weights_path)
 
     # prep build dir
     build_path = os.path.join(cwd, 'build')
@@ -280,7 +270,7 @@ def main(args: argparse.Namespace):
         json_content = json.load(fid)
 
     # prep info
-    cmdline  = f'CMD [ "python3", "/opt/code/python-ismrmrd-server/main.py", "-v", "-H=0.0.0.0", "-p=9002", "-l=/tmp/python-ismrmrd-server.log", "--defaultConfig={target_data['name']['process']}"]'
+    cmdline  = f"CMD [ \"python3\", \"/opt/code/python-ismrmrd-server/main.py\", \"-v\", \"-H=0.0.0.0\", \"-p=9002\", \"-l=/tmp/share/debug/python-ismrmrd-server.log\", \"--defaultConfig={target_data['name']['process']}\"]"
     version                         = json_content['general']['version']
     vendor                          = json_content['general']['vendor' ]
     name                            = json_content['general']['id'     ]
@@ -318,16 +308,12 @@ def main(args: argparse.Namespace):
         f'',
         f'# Python modules installation',
         f'RUN apt-get update && apt-get install -y gcc # surfa needs gcc to compile',
-        f'RUN pip3 --no-cache-dir install antspyx surfa',
-        f'RUN pip3 --no-cache-dir install torch --index-url https://download.pytorch.org/whl/cpu # CPU version of pytorch',
+        f'RUN pip3 --no-cache-dir install antspyx antspynet',
         f'',
         f'# Cleanup files not required after installation',
         f'RUN apt-get clean && \\',
         f'    rm -rf /var/lib/apt/lists/* && \\',
         f'    rm -rf /root/.cach/pip',
-        f'',
-        f'# copy the .pt file (weights)',
-        f'COPY {os.path.relpath(weights_path, cwd)}  /opt/code/python-ismrmrd-server',
         f'',
         f'# Copy base image after installation, to reduce finale image size',
         f'FROM base AS runtime',
@@ -339,7 +325,8 @@ def main(args: argparse.Namespace):
         f'LABEL "com.siemens-healthineers.magneticresonance.openrecon.metadata:1.1.0"="{encoded_json_content}"',
         f'',
         f'# copy the .py module',
-        f'COPY {os.path.relpath(target_data['path']['process'], cwd)}  /opt/code/python-ismrmrd-server',
+        f'COPY {os.path.relpath(target_data["path"]["process"], cwd)}  /opt/code/python-ismrmrd-server',
+        f'COPY {os.path.relpath(target_data["path"]["process_json"], cwd)}  /opt/code/python-ismrmrd-server',
         f'',
     ]
     dockerfile_content = "\n".join(dockerfile_content)
