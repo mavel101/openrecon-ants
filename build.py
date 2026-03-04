@@ -80,12 +80,12 @@ def clone_server(repo_path: str) -> None:
     logger = logging.getLogger()
 
     # python-ismrmrd-server : this has the client / server functionality
-    git_adress = 'https://github.com/kspaceKelvin/python-ismrmrd-server'
+    git_adress = 'https://github.com/pehses/python-ismrmrd-server'
     if os.path.exists(repo_path):
         logger.info(f'Found `python-ismrmrd-server` dir, do not clone it again : {repo_path}')
     else:
         logger.info('`python-ismrmrd-server` not found, cloning it...')
-        subprocess.run(f'git clone {git_adress}', shell=True, check=True)
+        subprocess.run(f'git clone {git_adress} && cd python-ismrmrd-server && git checkout 7fbfb15', shell=True, check=True)
 
 
 def build_server(repo_dockerfile_path: str) -> None:
@@ -308,7 +308,7 @@ def main(args: argparse.Namespace):
         f'',
         f'# Python modules installation',
         f'RUN apt-get update && apt-get install -y gcc # surfa needs gcc to compile',
-        f'RUN pip3 --no-cache-dir install antspyx antspynet nibabel',
+        f'RUN pip3 --no-cache-dir install antspyx==0.6.3 antspynet==0.3.2',
         f'',
         f'# Cleanup files not required after installation',
         f'RUN apt-get clean && \\',
@@ -326,6 +326,8 @@ def main(args: argparse.Namespace):
         f'',
         f'# copy the .py module',
         f'COPY {os.path.relpath(target_data["path"]["process"], cwd)}  /opt/code/python-ismrmrd-server',
+        f'ENV NVIDIA_VISIBLE_DEVICES all',
+        f'ENV NVIDIA_DRIVER_CAPABILITIES compute,utility',
         f'',
     ]
     dockerfile_content = "\n".join(dockerfile_content)

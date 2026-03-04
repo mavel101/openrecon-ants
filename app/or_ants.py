@@ -169,8 +169,8 @@ class ImageFactory:
             tmpMeta['Keep_image_geometry']            = 1
 
             metaXml = tmpMeta.serialize()
-            logging.debug("Image MetaAttributes: %s", xml.dom.minidom.parseString(metaXml).toprettyxml())
-            logging.debug("Image data has %d elements", imagesOut[iImg].data.size)
+            # logging.debug("Image MetaAttributes: %s", xml.dom.minidom.parseString(metaXml).toprettyxml())
+            # logging.debug("Image data has %d elements", imagesOut[iImg].data.size)
 
             imagesOut[iImg].attribute_string = metaXml
 
@@ -209,7 +209,26 @@ def check_OR_arguments(config, arg_name: str, arg_type: type, arg_default: any) 
     logging.info(f'{arg_name} = {arg_value}')
     return arg_value
 
-    
+def get_direction(image_header):
+
+    # Extract necessary fields
+    read_dir      = image_header.read_dir
+    phase_dir     = image_header.phase_dir
+    slice_dir     = image_header.slice_dir 
+
+    # Tested only for sagittal orientation
+    read_dir_ants  = [read_dir[0],  read_dir[1],  -read_dir[2]]
+    phase_dir_ants = [phase_dir[0], phase_dir[1], -phase_dir[2]]
+    slice_dir_ants = [slice_dir[0], slice_dir[1], -slice_dir[2]]
+
+    direction = np.column_stack([
+        np.array(read_dir_ants),
+        np.array(phase_dir_ants),
+        np.array(slice_dir_ants)
+    ])
+
+    return direction
+
 def process_image(images, connection, config, metadata):
     
     if len(images) == 0:
@@ -237,7 +256,7 @@ def process_image(images, connection, config, metadata):
     logging.warning(f'MRD SequenceDescription : {meta[0]['SequenceDescription']}')
 
     # Display MetaAttributes for first image
-    logging.debug("MetaAttributes[0]: %s", ismrmrd.Meta.serialize(meta[0]))
+    # logging.debug("MetaAttributes[0]: %s", ismrmrd.Meta.serialize(meta[0]))
 
     # Optional serialization of ICE MiniHeader
     if 'IceMiniHead' in meta[0]:
@@ -261,9 +280,11 @@ def process_image(images, connection, config, metadata):
     imgfactory.mrdHeader = head
     imgfactory.mrdMeta   = meta
 
+    direction = get_direction(head[0])
+
     data_3d = imgfactory.MRD5Dto3D(data_mrd5D=data)
     logging.info(f'ANTs input data shape : {data_3d.shape}')
-    ants_image_in = ants.from_numpy(data_3d)
+    ants_image_in = ants.from_numpy(data_3d, spacing=list(voxelsize), direction=direction)
 
     masking_args  = {}
     masking_label = ''
