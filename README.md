@@ -1,5 +1,27 @@
 # openrecon-ants
 
+This OpenRecon was modified by exchanging the SynthStrip brain masking with antspynet brain masking. The original repo can be found at https://github.com/benoitberanger/openrecon-ants.
+The following steps are required to run this recon with Siemens FIRE:
+
+1. Necessary files at the scanner: 
+    - `%CustomerIceProgs%/fire/fire_i2i.ini`
+        - Contains network configuration for reco server including the port number
+    - `%CustomerIceProgs%/IceProgramFireImageAddin_ants.xml`
+        - Set "IniFile" to "%CustomerIceProgs%\fire\fire_i2i.ini"
+        - Set "Config" to "or_ants"
+        - Set "Anchor" in the "ImageEmitter" to the last ICE functor before imafinish. This is often the distortion correction (e.g. "DistorCor3D"), but can vary in different sequence. To inspect the ICE chain, export the raw data from Twix (or just the raw data header) and open it with Xbuilder. Then select PIPE in the IRIS section.
+        - Optional: Set "PassOnData" to true "within" the ImageEmitter to pass data also along the original ICE pipeline.
+    - `%CustomerIceProgs%/IceProgramFireImageAddin_ants.ipr`
+2. Build the docker container as described in the "Build" section below with the command `python build.py`.
+3. Run the docker container with a command like: `docker run -d -t --rm -p 9002:9023 --gpus all openrecon_icm_ants:v3.0.0`. The port (here 9023) has to be the same as in "fire_i2i.ini".
+4. Configure a DotAddin (e.g. Generic Views) to set `IceProgramFireImageAddin_ants.ipr` as an additional IceProgram via Ice Configuration. This is described in the FIRE manual.
+5. Add the DotAddin to a protocol and run the sequence.
+6. The log file can be found inside the container at /tmp/share/debug/python-ismrmrd-server.log.
+
+Note: If the FIRE image addin is used, the image data gets upscaled for some reason by a factor ~16 (tested for MPRAGE), which can cause clipping due to DICOM limits. Therefore, an appropriate image scaling factor has to be set in the sequence
+
+# Original README
+
 ## Screenshots from the MR Host
 Siemens 7T Terra.X in XA60A.  
 Also tested on Siemens 3T Cima.X on XA61(-SP01)  
