@@ -85,7 +85,7 @@ def clone_server(repo_path: str) -> None:
         logger.info(f'Found `python-ismrmrd-server` dir, do not clone it again : {repo_path}')
     else:
         logger.info('`python-ismrmrd-server` not found, cloning it...')
-        subprocess.run(f'git clone {git_adress} && cd python-ismrmrd-server && git checkout 7fbfb15', shell=True, check=True)
+        subprocess.run(f'git clone {git_adress} && cd python-ismrmrd-server && git checkout 81d94a0', shell=True, check=True)
 
 
 def build_server(repo_dockerfile_path: str) -> None:
