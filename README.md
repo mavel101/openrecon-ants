@@ -20,6 +20,8 @@ The following steps are required to run this recon with Siemens FIRE:
 
 Note: If the FIRE image addin is used, the image data gets upscaled for some reason by a factor ~16 (tested for MPRAGE), which can cause clipping due to DICOM limits. Therefore, an appropriate image scaling factor has to be set in the sequence
 
+The Docker image is archived at https://hub.docker.com/repository/docker/mavel101/fire_ants. This archive can also be used to create a singularity image with the command `singularity pull docker://mavel101/fire_ants:latest`.
+
 # Original README
 
 ## Screenshots from the MR Host
