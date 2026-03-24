@@ -13,7 +13,7 @@ The following steps are required to run this recon with Siemens FIRE:
         - Optional: Set "PassOnData" to true "within" the ImageEmitter to pass data also along the original ICE pipeline.
     - `%CustomerIceProgs%/IceProgramFireImageAddin_ants.ipr`
 2. Build the docker container as described in the "Build" section below with the command `python build.py`.
-3. Run the docker container with a command like: `docker run -d -t --rm -p 9002:9023 --gpus all openrecon_icm_ants:v3.0.0`. The port (here 9023) has to be the same as in "fire_i2i.ini".
+3. Run the docker container with a command like: `docker run -d -t --rm -p 9023:9002 --gpus all openrecon_icm_ants:v3.0.0`. The port (here 9023) has to be the same as in "fire_i2i.ini".
 4. Configure a DotAddin (e.g. Generic Views) to set `IceProgramFireImageAddin_ants.ipr` as an additional IceProgram via Ice Configuration. This is described in the FIRE manual.
 5. Add the DotAddin to a protocol and run the sequence.
 6. The log file can be found inside the container at /tmp/share/debug/python-ismrmrd-server.log.
