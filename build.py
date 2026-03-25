@@ -100,7 +100,10 @@ def build_server(repo_dockerfile_path: str) -> None:
         # build docker image for python-ismrmrd-server
         # this image is the starting point, that will be refined latter
         logger.info('building docker image `python-ismrmrd-server`')
-        subprocess.run(['docker', 'build', '--tag', 'python-ismrmrd-server', '--file', repo_dockerfile_path, './'], check=True)
+        # Build from the python-ismrmrd-server directory so COPY . does not
+        # include an extra top-level python-ismrmrd-server folder.
+        build_context = os.path.dirname(os.path.dirname(repo_dockerfile_path))
+        subprocess.run(['docker', 'build', '--tag', 'python-ismrmrd-server', '--file', repo_dockerfile_path, build_context], check=True)
 
 
 def check_target_dir(target_path: str) -> dict:
@@ -307,7 +310,6 @@ def main(args: argparse.Namespace):
         f'FROM python-ismrmrd-server AS base',
         f'',
         f'# Python modules installation',
-        f'RUN apt-get update && apt-get install -y gcc # surfa needs gcc to compile',
         f'RUN pip3 --no-cache-dir install antspyx==0.6.3 antspynet==0.3.2',
         f'',
         f'# Cleanup files not required after installation',
